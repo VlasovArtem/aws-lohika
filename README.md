@@ -8,8 +8,14 @@ Use `Parameters` section for customization of inputs.
 Use `Outputs` section to show public IP of the instance
 ### Solution
 [Cloudformation Script](./cloudformation/week-0.yaml)
+Create Stack
 ```shell
 aws cloudformation create-stack --profile lohika --template-body file:///Users/avlasov/git/lohika/aws/cloudformation/week-0.yaml --stack-name week-0 --region us-west-2 --parameters ParameterKey=KeyName,ParameterValue=Week0
+```
+
+Delete Stack
+``` shell
+aws cloudformation delete-stack --stack-name week-0 --profile lohika 
 ```
 #### Screenshots
 ![Overview](./images/week-0/Stack_Overview.png)

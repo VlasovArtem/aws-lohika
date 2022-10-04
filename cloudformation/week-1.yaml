@@ -21,14 +21,32 @@ Parameters:
   MyZoneId1:
     Description: The EC2 Zone Identifier 1
     Type: String
-    Default: usw2-az1
+    Default: subnet-0dd78910b9d72fa32
 
   MyZoneId2:
     Description: The EC2 Zone Identifier 2
     Type: String
-    Default: usw2-az2
+    Default: subnet-0eefbbe3abafa6af9
 
 Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: AllowEC2Traffic
+      GroupDescription: Enable SSH access and HTTP access on the inbound port
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: InstanceSecurityGroup
+
   EC2InstanceLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Metadata:
@@ -36,30 +54,31 @@ Resources:
         config:
           packages:
             yum:
-              java: [ java8 ]
-    UserData: !Base64
-      'Fn::Join':
-        - ''
-        - - |
-            #!/bin/bash -xe
-          - |
-            yum install -y aws-cfn-bootstrap
-          - |
-            # Install the files and packages from the metadata
-          - '/opt/aws/bin/cfn-init -v '
-          - '         --stack '
-          - !Ref 'AWS::StackName'
-          - '         --resource WebServerInstance '
-          - '         --configsets Install '
-          - '         --region '
-          - !Ref 'AWS::Region'
-          - |+
+              java: [ "1.8.0-openjdk" ]
     Properties:
       LaunchTemplateName: !Sub ${AWS::StackName}-launch-template
       LaunchTemplateData:
         KeyName: !Ref KeyName
         ImageId: !Ref EC2InstanceImageId
-        ImageType: !Ref EC2InstanceType
+        InstanceType: !Ref EC2InstanceType
+        SecurityGroupIds:
+          - !GetAtt InstanceSecurityGroup.GroupId
+        UserData: !Base64
+          'Fn::Sub':
+            - >
+              #!/bin/bash -x
+
+              # Install the files and packages from the metadata
+
+              /opt/aws/bin/cfn-init -v --stack ${AWS::StackName} --resource EC2InstanceLaunchTemplate
+              --region ${AWS::Region}
+
+
+              # Signal the status from cfn-init
+
+              /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource
+              EC2InstanceLaunchTemplate --region ${AWS::Region}
+            - { }
 
   Week1ASG:
     Type: AWS::AutoScaling::AutoScalingGroup

@@ -24,7 +24,7 @@ Resources:
     Properties:
       KeyName: !Ref KeyName
       ImageId: !Ref EC2InstanceImageId
-      ImageType: !Ref EC2InstanceType
+      InstanceType: !Ref EC2InstanceType
 
 Outputs:
   PublicIp:
